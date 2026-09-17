@@ -110,7 +110,7 @@ import re
 import shutil
 import subprocess
 import time
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from urllib.parse import unquote, urlparse
 
 from .base import (
@@ -270,7 +270,9 @@ def reported_paths(response: str) -> list[str]:
     for match in _FILE_DETAIL_RE.finditer(response):
         name = match.group(1).strip().strip("`")
         add(name)  # already absolute, or resolvable against the workdir
-        if not name or Path(name).is_absolute():
+        # Either flavour counts: agy's prose can carry a drive-letter path while
+        # sprite-gen runs on POSIX, where `Path("D:/x").is_absolute()` is False.
+        if not name or PurePosixPath(name).is_absolute() or PureWindowsPath(name).is_absolute():
             continue
         after = next((text for start, text in folders if start > match.start()), None)
         before = next(
